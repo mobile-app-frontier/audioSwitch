@@ -1,0 +1,41 @@
+buildscript {
+    ext.kotlin_version = '1.4.21'
+    ext.dokka_version = '1.4.32'
+
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:7.0.3'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath "org.jetbrains.dokka:dokka-gradle-plugin:$dokka_version"
+    }
+}
+
+plugins {
+    id "com.diffplug.spotless" version "5.6.1"
+    id "org.jetbrains.dokka" version "$dokka_version"
+    id "io.github.gradle-nexus.publish-plugin" version "1.0.0"
+    id "maven-publish"
+}
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+nexusPublishing {
+//    repositories {
+//        maven {
+//            name = 'myRepo'
+//            url = layout.buildDirectory.dir("publication")
+//        }
+//    }
+
+    clientTimeout = Duration.ofSeconds(300)
+    connectTimeout = Duration.ofSeconds(60)
+}
+
