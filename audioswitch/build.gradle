@@ -6,6 +6,10 @@ plugins {
     id 'org.jetbrains.dokka' // document 나중에
 }
 
+def audioSwitchGroupId = 'com.kt'
+def audioSwitchArtifactId = 'audioswitch'
+def audioSwitchVersion = '1.0.0'
+
 android {
     compileSdkVersion 31
 
@@ -18,8 +22,7 @@ android {
     defaultConfig {
         minSdkVersion 23
         targetSdkVersion 31
-//        buildConfigField("String", "VERSION_NAME",
-//                "\"${audioSwitchVersion}\"")
+        buildConfigField("String", "VERSION_NAME", "\"${audioSwitchVersion}\"")
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         testInstrumentationRunnerArguments clearPackageData: 'true'
@@ -27,13 +30,13 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_1_8
-        freeCompilerArgs += '-Xexplicit-api=strict'
+        jvmTarget = JavaVersion.VERSION_11
+//        freeCompilerArgs += '-Xexplicit-api=strict'
     }
 
     testOptions {
@@ -81,31 +84,27 @@ artifacts {
     archives androidSourcesJar
 }
 
-def audioSwitchGroupId = 'com.kt'
-def audioSwitchArtifactId = 'audioswitch'
-def audioSwitchVersion = '1.0.0'
-
 /*
  * The publishing block enables publishing to MavenCentral
  */
-afterEvaluate {
-    publishing {
-        publications {
-            release(MavenPublication) {
-//            artifact("$buildDir/outputs/aar/audioswitch-release.aar")
+//afterEvaluate {
+//    publishing {
+//        publications {
+//            release(MavenPublication) {
+////            artifact("$buildDir/outputs/aar/audioswitch-release.aar")
+////
+////            artifact androidSourcesJar {
+////                classifier "sources"
+////            }
+//                from components.release
 //
-//            artifact androidSourcesJar {
-//                classifier "sources"
+//                groupId = audioSwitchGroupId
+//                artifactId = audioSwitchArtifactId
+//                version = audioSwitchVersion
 //            }
-                from components.release
-
-                groupId = audioSwitchGroupId
-                artifactId = audioSwitchArtifactId
-                version = audioSwitchVersion
-            }
-        }
-    }
-}
+//        }
+//    }
+//}
 //    repositories {
 //        maven {
 //            name = 'myRepo'
@@ -120,6 +119,6 @@ afterEvaluate {
 //}
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
 }
