@@ -87,24 +87,26 @@ artifacts {
 /*
  * The publishing block enables publishing to MavenCentral
  */
-//afterEvaluate {
-//    publishing {
-//        publications {
-//            release(MavenPublication) {
-////            artifact("$buildDir/outputs/aar/audioswitch-release.aar")
-////
-////            artifact androidSourcesJar {
-////                classifier "sources"
-////            }
-//                from components.release
-//
-//                groupId = audioSwitchGroupId
-//                artifactId = audioSwitchArtifactId
-//                version = audioSwitchVersion
-//            }
-//        }
-//    }
-//}
+afterEvaluate {
+    publishing {
+        publications {
+            release(MavenPublication) {
+                artifact("$buildDir/outputs/aar/audioswitch-release.aar")
+
+//                artifact androidSourcesJar {
+//                    classifier "sources"
+//                }
+
+                from components.release
+
+                groupId = audioSwitchGroupId
+                artifactId = audioSwitchArtifactId
+                version = audioSwitchVersion
+            }
+        }
+    }
+}
+
 //    repositories {
 //        maven {
 //            name = 'myRepo'
