@@ -12,12 +12,6 @@ def audioSwitchVersion = '1.0.0'
 android {
     compileSdkVersion 31
 
-//    repositories {
-//        maven {
-//            url 'https://github.com/mobile-app-frontier/audioSwitch.git'
-//        }
-//    }
-
     defaultConfig {
         minSdkVersion 23
         targetSdkVersion 31
@@ -98,7 +92,7 @@ afterEvaluate {
 
         publications {
             release(MavenPublication) {
-                artifact("$buildDir/outputs/aar/audioswitch-release.aar")
+//                artifact("$buildDir/outputs/aar/audioswitch-release.aar")
 
 //                artifact androidSourcesJar {
 //                    classifier "sources"
