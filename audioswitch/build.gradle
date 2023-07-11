@@ -105,15 +105,14 @@ afterEvaluate {
             }
         }
     }
-}
 
-//    repositories {
-//        maven {
-//            name = 'myRepo'
-//            url = layout.buildDirectory.dir("publication")
-//        }
-//    }
-//}
+    repositories {
+        maven {
+            name = 'ktRepo'
+            url = layout.buildDirectory.dir("publication")
+        }
+    }
+}
 
 //signing {
 //    useGpgCmd()
