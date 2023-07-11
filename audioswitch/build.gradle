@@ -1,7 +1,6 @@
 plugins {
     id 'com.android.library'
     id 'maven-publish'
-    id 'signing'
     id 'kotlin-android'
     id 'org.jetbrains.dokka' // document 나중에
 }
@@ -89,6 +88,14 @@ artifacts {
  */
 afterEvaluate {
     publishing {
+
+//        repositories {
+//            maven {
+//                name = 'ktAudioswitch'
+//                url = 'https://jitpack.io'
+//            }
+//        }
+
         publications {
             release(MavenPublication) {
                 artifact("$buildDir/outputs/aar/audioswitch-release.aar")
@@ -105,21 +112,9 @@ afterEvaluate {
             }
         }
     }
-
-    repositories {
-        maven {
-            name = 'ktRepo'
-            url = layout.buildDirectory.dir("publication")
-        }
-    }
 }
 
 //signing {
 //    useGpgCmd()
 //    sign publishing.publications
 //}
-
-java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
-}
