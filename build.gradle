@@ -23,19 +23,8 @@ plugins {
 allprojects {
     repositories {
         google()
+        mavenLocal()
         mavenCentral()
+        maven { url 'https://jitpack.io'}
     }
 }
-
-nexusPublishing {
-//    repositories {
-//        maven {
-//            name = 'myRepo'
-//            url = layout.buildDirectory.dir("publication")
-//        }
-//    }
-
-    clientTimeout = Duration.ofSeconds(300)
-    connectTimeout = Duration.ofSeconds(60)
-}
-
