@@ -68,14 +68,24 @@ dependencies {
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
 }
 
-task androidSourcesJar(type: Jar) {
+//task sourcesJar(type: Jar) {
+//    classifier = 'sources'
+//    from sourceSets.main.allSource
+//}
+
+task sourcesJar(type: Jar) {
+    from android.sourceSets.main.java.srcDirs
     archiveClassifier.set('sources')
-    from android.sourceSets.main.java.source
 }
 
-artifacts {
-    archives androidSourcesJar
-}
+//task androidSourcesJar(type: Jar) {
+//    archiveClassifier.set('sources')
+//    from android.sourceSets.main.java.source
+//}
+//
+//artifacts {
+//    archives androidSourcesJar
+//}
 
 //task sourcesJar(type: Jar) {
 //    from android.sourceSets.main.java.srcDirs
@@ -97,13 +107,10 @@ afterEvaluate {
 
         publications {
             release(MavenPublication) {
-//                artifact("$buildDir/outputs/aar/audioswitch-release.aar")
 
-//                artifact androidSourcesJar {
-//                    classifier "sources"
-//                }
-
-//                artifact sourcesJar
+                artifacts {
+                    archives sourcesJar
+                }
 
                 from components.release
 
