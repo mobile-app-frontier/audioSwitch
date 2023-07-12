@@ -252,7 +252,7 @@ abstract class AbstractAudioSwitch
         /**
          * The version of the AudioSwitch library.
          */
-        const val VERSION = BuildConfig.VERSION_NAME
+        const val VERSION = "1.0.0" //BuildConfig.VERSION_NAME
 
         internal val defaultPreferredDeviceList by lazy {
             listOf(
