@@ -23,7 +23,7 @@ internal class AudioDeviceScanner(
             .any {
                 val audioDevice1 = it.isAudioDevice(audioDevice)
                 audioDevice1
-            }
+            } 
 
     override fun start(listener: Scanner.Listener): Boolean {
         this.listener = listener
