@@ -77,6 +77,11 @@ artifacts {
     archives androidSourcesJar
 }
 
+task sourcesJar(type: Jar) {
+    from android.sourceSets.main.java.srcDirs
+    archiveClassifier.set('sources')
+}
+
 /*
  * The publishing block enables publishing to MavenCentral
  */
@@ -97,6 +102,8 @@ afterEvaluate {
 //                artifact androidSourcesJar {
 //                    classifier "sources"
 //                }
+
+                artifact sourcesJar
 
                 from components.release
 

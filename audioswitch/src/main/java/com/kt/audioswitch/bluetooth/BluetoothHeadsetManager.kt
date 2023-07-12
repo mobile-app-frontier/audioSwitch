@@ -34,16 +34,17 @@ import com.kt.audioswitch.bluetooth.BluetoothHeadsetManager.HeadsetState.AudioAc
 import com.kt.audioswitch.bluetooth.BluetoothHeadsetManager.HeadsetState.Connected
 import com.kt.audioswitch.bluetooth.BluetoothHeadsetManager.HeadsetState.Disconnected
 
+
 private const val TAG = "BluetoothHeadsetManager"
 private const val PERMISSION_ERROR_MESSAGE = "Bluetooth unsupported, permissions not granted"
 
 internal class BluetoothHeadsetManager
-
 @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
 internal constructor(
     private val context: Context,
     private val logger: Logger,
-    private val bluetoothAdapter: BluetoothAdapter,
+    @get:VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    internal val bluetoothAdapter: BluetoothAdapter,
     audioDeviceManager: AudioDeviceManager,
     var headsetListener: BluetoothHeadsetConnectionListener? = null,
     bluetoothScoHandler: Handler = Handler(Looper.getMainLooper()),
@@ -65,11 +66,16 @@ internal constructor(
         }
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    internal val enableBluetoothScoJob: EnableBluetoothScoJob = EnableBluetoothScoJob(logger,
-            audioDeviceManager, bluetoothScoHandler, systemClockWrapper)
+    internal val enableBluetoothScoJob: EnableBluetoothScoJob = EnableBluetoothScoJob(
+        logger,
+        audioDeviceManager, bluetoothScoHandler, systemClockWrapper
+    )
+
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    internal val disableBluetoothScoJob: DisableBluetoothScoJob = DisableBluetoothScoJob(logger,
-            audioDeviceManager, bluetoothScoHandler, systemClockWrapper)
+    internal val disableBluetoothScoJob: DisableBluetoothScoJob = DisableBluetoothScoJob(
+        logger,
+        audioDeviceManager, bluetoothScoHandler, systemClockWrapper
+    )
 
     companion object {
         internal fun newInstance(
@@ -111,15 +117,17 @@ internal constructor(
                     when (state) {
                         STATE_CONNECTED -> {
                             logger.d(
-                                    TAG,
-                                    "Bluetooth headset $bluetoothDevice connected")
+                                TAG,
+                                "Bluetooth headset $bluetoothDevice connected"
+                            )
                             connect()
                             headsetListener?.onBluetoothHeadsetStateChanged(bluetoothDevice.name)
                         }
                         STATE_DISCONNECTED -> {
                             logger.d(
-                                    TAG,
-                                    "Bluetooth headset $bluetoothDevice disconnected")
+                                TAG,
+                                "Bluetooth headset $bluetoothDevice disconnected"
+                            )
                             disconnect()
                             headsetListener?.onBluetoothHeadsetStateChanged()
                         }
@@ -150,9 +158,8 @@ internal constructor(
     }
 
     fun start(headsetListener: BluetoothHeadsetConnectionListener) {
+        this.headsetListener = headsetListener
         if (hasPermissions()) {
-            this.headsetListener = headsetListener
-
             bluetoothAdapter.getProfileProxy(
                 context,
                 this,
@@ -230,7 +237,7 @@ internal constructor(
     }
 
     private fun isCorrectIntentAction(intentAction: String?) =
-            intentAction == ACTION_CONNECTION_STATE_CHANGED || intentAction == ACTION_AUDIO_STATE_CHANGED
+        intentAction == ACTION_CONNECTION_STATE_CHANGED || intentAction == ACTION_AUDIO_STATE_CHANGED
 
     private fun connect() {
         if (!hasActiveHeadset()) headsetState = Connected
@@ -253,54 +260,54 @@ internal constructor(
     private fun hasActiveHeadsetChanged() = headsetState == AudioActivated && hasConnectedDevice() && !hasActiveHeadset()
 
     private fun getHeadsetName(): String? =
-            headsetProxy?.let { proxy ->
-                proxy.connectedDevices?.let { devices ->
-                    when {
-                        devices.size > 1 && hasActiveHeadset() -> {
-                            val device = devices.find { proxy.isAudioConnected(it) }?.name
-                            logger.d(TAG, "Device size > 1 with device name: $device")
-                            device
-                        }
-                        devices.size == 1 -> {
-                            val device = devices.first().name
-                            logger.d(TAG, "Device size 1 with device name: $device")
-                            device
-                        }
-                        else -> {
-                            logger.d(TAG, "Device size 0")
-                            null
-                        }
+        headsetProxy?.let { proxy ->
+            proxy.connectedDevices?.let { devices ->
+                when {
+                    devices.size > 1 && hasActiveHeadset() -> {
+                        val device = devices.find { proxy.isAudioConnected(it) }?.name
+                        logger.d(TAG, "Device size > 1 with device name: $device")
+                        device
+                    }
+                    devices.size == 1 -> {
+                        val device = devices.first().name
+                        logger.d(TAG, "Device size 1 with device name: $device")
+                        device
+                    }
+                    else -> {
+                        logger.d(TAG, "Device size 0")
+                        null
                     }
                 }
             }
+        }
 
     private fun hasActiveHeadset() =
-            headsetProxy?.let { proxy ->
-                proxy.connectedDevices?.let { devices ->
-                    devices.any { proxy.isAudioConnected(it) }
-                }
-            } ?: false
+        headsetProxy?.let { proxy ->
+            proxy.connectedDevices?.let { devices ->
+                devices.any { proxy.isAudioConnected(it) }
+            }
+        } ?: false
 
     private fun hasConnectedDevice() =
-            headsetProxy?.let { proxy ->
-                proxy.connectedDevices?.let { devices ->
-                    devices.isNotEmpty()
-                }
-            } ?: false
+        headsetProxy?.let { proxy ->
+            proxy.connectedDevices?.let { devices ->
+                devices.isNotEmpty()
+            }
+        } ?: false
 
     private fun Intent.getHeadsetDevice(): BluetoothDeviceWrapper? =
-            bluetoothIntentProcessor.getBluetoothDevice(this)?.let { device ->
-                if (isHeadsetDevice(device)) device else null
-            }
+        bluetoothIntentProcessor.getBluetoothDevice(this)?.let { device ->
+            if (isHeadsetDevice(device)) device else null
+        }
 
     private fun isHeadsetDevice(deviceWrapper: BluetoothDeviceWrapper): Boolean =
-            deviceWrapper.deviceClass?.let { deviceClass ->
-                deviceClass == BluetoothClass.Device.AUDIO_VIDEO_HANDSFREE ||
-                        deviceClass == BluetoothClass.Device.AUDIO_VIDEO_WEARABLE_HEADSET ||
-                        deviceClass == BluetoothClass.Device.AUDIO_VIDEO_CAR_AUDIO ||
-                        deviceClass == BluetoothClass.Device.AUDIO_VIDEO_HEADPHONES ||
-                        deviceClass == BluetoothClass.Device.Major.UNCATEGORIZED
-            } ?: false
+        deviceWrapper.deviceClass?.let { deviceClass ->
+            deviceClass == BluetoothClass.Device.AUDIO_VIDEO_HANDSFREE ||
+                    deviceClass == BluetoothClass.Device.AUDIO_VIDEO_WEARABLE_HEADSET ||
+                    deviceClass == BluetoothClass.Device.AUDIO_VIDEO_CAR_AUDIO ||
+                    deviceClass == BluetoothClass.Device.AUDIO_VIDEO_HEADPHONES ||
+                    deviceClass == BluetoothClass.Device.Major.UNCATEGORIZED
+        } ?: false
 
     internal fun hasPermissions() = permissionsRequestStrategy.hasPermissions()
 
@@ -356,21 +363,22 @@ internal constructor(
         PermissionsCheckStrategy {
         @SuppressLint("NewApi")
         override fun hasPermissions(): Boolean {
-            return if (context.applicationInfo.targetSdkVersion <= android.os.Build.VERSION_CODES.R ||
-                android.os.Build.VERSION.SDK_INT <= android.os.Build.VERSION_CODES.R
-            ) {
-                PERMISSION_GRANTED == context.checkPermission(
-                    Manifest.permission.BLUETOOTH,
-                    android.os.Process.myPid(),
-                    android.os.Process.myUid()
-                )
-            } else {
-                // for android 12/S or newer
-                PERMISSION_GRANTED == context.checkPermission(
-                    Manifest.permission.BLUETOOTH_CONNECT,
-                    android.os.Process.myPid(),
-                    android.os.Process.myUid()
-                )
+            return when (context.applicationInfo.targetSdkVersion) {
+                in android.os.Build.VERSION_CODES.BASE..android.os.Build.VERSION_CODES.R -> {
+                    PERMISSION_GRANTED == context.checkPermission(
+                        Manifest.permission.BLUETOOTH,
+                        android.os.Process.myPid(),
+                        android.os.Process.myUid()
+                    )
+                }
+                else -> {
+                    // for android 12/S or newer
+                    PERMISSION_GRANTED == context.checkPermission(
+                        Manifest.permission.BLUETOOTH_CONNECT,
+                        android.os.Process.myPid(),
+                        android.os.Process.myUid()
+                    )
+                }
             }
         }
     }

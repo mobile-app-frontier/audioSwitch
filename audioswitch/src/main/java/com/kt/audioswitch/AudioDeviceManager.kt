@@ -37,9 +37,10 @@ internal class AudioDeviceManager(
 
     @SuppressLint("NewApi")
     fun hasSpeakerphone(): Boolean {
-        return if (build.getVersion() >= Build.VERSION_CODES.M &&
-                context.packageManager
-                        .hasSystemFeature(PackageManager.FEATURE_AUDIO_OUTPUT)) {
+        return if (
+            build.getVersion() >= Build.VERSION_CODES.M &&
+            context.packageManager.hasSystemFeature(PackageManager.FEATURE_AUDIO_OUTPUT)
+        ) {
             val devices = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
             for (device in devices) {
                 if (device.type == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER) {
@@ -62,9 +63,10 @@ internal class AudioDeviceManager(
             audioRequest?.let { audioManager.requestAudioFocus(it) }
         } else {
             audioManager.requestAudioFocus(
-                    audioFocusChangeListener,
-                    AudioManager.STREAM_VOICE_CALL,
-                    AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
+                audioFocusChangeListener,
+                AudioManager.STREAM_VOICE_CALL,
+                AudioManager.AUDIOFOCUS_GAIN_TRANSIENT
+            )
         }
         /*
          * Start by setting MODE_IN_COMMUNICATION as default audio mode. It is
@@ -79,23 +81,8 @@ internal class AudioDeviceManager(
         audioManager.run { if (enable) startBluetoothSco() else stopBluetoothSco() }
     }
 
-    @SuppressLint("NewApi")
     fun enableSpeakerphone(enable: Boolean) {
         audioManager.isSpeakerphoneOn = enable
-
-        /**
-         * Some Samsung devices (reported Galaxy s9, s21) fail to route audio through USB headset
-         * when in MODE_IN_COMMUNICATION
-         */
-        if (!audioManager.isSpeakerphoneOn && "^SM-G(960|99)".toRegex().containsMatchIn(Build.MODEL)) {
-            val devices = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
-            for (device in devices) {
-                if (device.type == AudioDeviceInfo.TYPE_USB_HEADSET) {
-                    audioManager.mode = AudioManager.MODE_NORMAL
-                    break
-                }
-            }
-        }
     }
 
     fun mute(mute: Boolean) {
