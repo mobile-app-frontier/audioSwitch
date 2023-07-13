@@ -9,7 +9,7 @@ def audioSwitchArtifactId = 'audioswitch'
 def audioSwitchVersion = '1.0.0'
 
 android {
-    namespace audioSwitchGroupId + audioSwitchArtifactId
+    namespace 'com.kt.audioswitch' //audioSwitchGroupId + audioSwitchArtifactId
     compileSdkVersion 33
 
     defaultConfig {
