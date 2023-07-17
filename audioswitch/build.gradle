@@ -10,11 +10,11 @@ def audioSwitchArtifactId = 'audioswitch'
 def audioSwitchVersion = '1.0.0'
 
 android {
-    compileSdkVersion 31
+    compileSdkVersion 33
 
     defaultConfig {
         minSdkVersion 23
-        targetSdkVersion 31
+        targetSdkVersion 33
         buildConfigField("String", "VERSION_NAME", "\"${audioSwitchVersion}\"")
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
