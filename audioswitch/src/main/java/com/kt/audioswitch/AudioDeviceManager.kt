@@ -10,6 +10,8 @@ import android.media.AudioManager.OnAudioFocusChangeListener
 import android.os.Build
 import com.kt.audioswitch.android.BuildWrapper
 import com.kt.audioswitch.android.Logger
+import com.kt.audioswitch.scanners.Scanner
+import kotlinx.coroutines.flow.MutableStateFlow
 
 private const val TAG = "AudioDeviceManager"
 
@@ -19,8 +21,15 @@ internal class AudioDeviceManager(
     private val audioManager: AudioManager,
     private val build: BuildWrapper = BuildWrapper(),
     private val audioFocusRequest: AudioFocusRequestWrapper = AudioFocusRequestWrapper(),
-    private val audioFocusChangeListener: OnAudioFocusChangeListener
+    audioChangedFlow: MutableStateFlow<AudioDeviceChange>,
 ) {
+    private val focusListener = object : OnAudioFocusChangeListener {
+        override fun onAudioFocusChange(focus: Int) {
+            audioChangedFlow.value = audioChangedFlow.value.copy(
+                audioFocus = focus
+            )
+        }
+    }
 
     private var savedAudioMode = 0
     private var savedIsMicrophoneMuted = false
@@ -35,7 +44,6 @@ internal class AudioDeviceManager(
         return hasEarpiece
     }
 
-    @SuppressLint("NewApi")
     fun hasSpeakerphone(): Boolean {
         return if (
             build.getVersion() >= Build.VERSION_CODES.M &&
@@ -59,11 +67,11 @@ internal class AudioDeviceManager(
     fun setAudioFocus() {
         // Request audio focus before making any device switch.
         if (build.getVersion() >= Build.VERSION_CODES.O) {
-            audioRequest = audioFocusRequest.buildRequest(audioFocusChangeListener)
+            audioRequest = audioFocusRequest.buildRequest(focusListener)
             audioRequest?.let { audioManager.requestAudioFocus(it) }
         } else {
             audioManager.requestAudioFocus(
-                audioFocusChangeListener,
+                focusListener,
                 AudioManager.STREAM_VOICE_CALL,
                 AudioManager.AUDIOFOCUS_GAIN_TRANSIENT
             )
@@ -104,7 +112,7 @@ internal class AudioDeviceManager(
         if (build.getVersion() >= Build.VERSION_CODES.O) {
             audioRequest?.let { audioManager.abandonAudioFocusRequest(it) }
         } else {
-            audioManager.abandonAudioFocus(audioFocusChangeListener)
+            audioManager.abandonAudioFocus(focusListener)
         }
     }
 }
