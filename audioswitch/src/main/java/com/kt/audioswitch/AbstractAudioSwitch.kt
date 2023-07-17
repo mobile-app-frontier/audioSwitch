@@ -9,58 +9,49 @@ import com.kt.audioswitch.android.Logger
 import com.kt.audioswitch.android.ProductionLogger
 import com.kt.audioswitch.comparators.AudioDevicePriorityComparator
 import com.kt.audioswitch.scanners.Scanner
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import java.util.*
 import java.util.concurrent.ConcurrentSkipListSet
 
 internal const val TAG_AUDIO_SWITCH = "AudioSwitch"
 
-/**
- * This class enables developers to enumerate available audio devices and select which device audio
- * should be routed to. It is strongly recommended that instances of this class are created and
- * accessed from a single application thread. Accessing an instance from multiple threads may cause
- * synchronization problems.
- *
- * @property loggingEnabled A property to configure AudioSwitch logging behavior. AudioSwitch logging is disabled by
- * default.
- * @property selectedAudioDevice Retrieves the selected [AudioDevice] from [AudioSwitch.selectDevice].
- * @property availableAudioDevices Retrieves the current list of available [AudioDevice]s.
- **/
 abstract class AbstractAudioSwitch
-/**
- * Constructs a new AudioSwitch instance.
- * - [context] - An Android Context.
- * - [loggingEnabled] - Toggle whether logging is enabled. This argument is false by default.
- * - [audioFocusChangeListener] - A listener that is invoked when the system audio focus is updated.
- * Note that updates are only sent to the listener after [activate] has been called.
- * - [preferredDeviceList] - The order in which [AudioSwitch] automatically selects and activates
- * an [AudioDevice]. This parameter is ignored if the [selectedAudioDevice] is not `null`.
- * The default preferred [AudioDevice] order is the following:
- * [BluetoothHeadset], [WiredHeadset], [Earpiece], [Speakerphone]
- * . The [preferredDeviceList] is added to the front of the default list. For example, if [preferredDeviceList]
- * is [Speakerphone] and [BluetoothHeadset], then the new preferred audio
- * device list will be:
- * [Speakerphone], [BluetoothHeadset], [WiredHeadset], [Earpiece].
- * An [IllegalArgumentException] is thrown if the [preferredDeviceList] contains duplicate [AudioDevice] elements.
- */ @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE) internal constructor(
-    context: Context,
-    audioFocusChangeListener: AudioManager.OnAudioFocusChangeListener,
-    scanner: Scanner,
-    loggingEnabled: Boolean = true,
-    internal var logger: Logger = ProductionLogger(loggingEnabled),
-    preferredDeviceList: List<Class<out AudioDevice>>,
-    internal val audioDeviceManager: AudioDeviceManager = AudioDeviceManager(
-        context,
-        logger,
-        context.getSystemService(Context.AUDIO_SERVICE) as AudioManager,
-        audioFocusChangeListener = audioFocusChangeListener
-    )
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE) internal constructor(
+        context: Context,
+        private val audioChangedFlow: MutableStateFlow<AudioDeviceChange>,
+        scanner: Scanner,
+        loggingEnabled: Boolean = true,
+        internal var logger: Logger = ProductionLogger(loggingEnabled),
+        preferredDeviceList: List<Class<out AudioDevice>>,
+        internal val audioDeviceManager: AudioDeviceManager = AudioDeviceManager(
+            context,
+            logger,
+            context.getSystemService(Context.AUDIO_SERVICE) as AudioManager,
+            audioChangedFlow = audioChangedFlow
+        )
 ) : Scanner.Listener {
-    internal var audioDeviceChangeListener: AudioDeviceChangeListener? = null
+
+    companion object {
+        const val VERSION = BuildConfig.VERSION_NAME
+
+        internal val defaultPreferredDeviceList by lazy {
+            listOf(
+                BluetoothHeadset::class.java,
+                WiredHeadset::class.java,
+                Earpiece::class.java,
+                Speakerphone::class.java,
+            )
+        }
+    }
+
     internal var state: State = STOPPED
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal val deviceScanner: Scanner = scanner
+
     private val preferredDeviceList: List<Class<out AudioDevice>>
+
     protected var userSelectedAudioDevice: AudioDevice? = null
 
     internal enum class State {
@@ -74,20 +65,21 @@ abstract class AbstractAudioSwitch
         }
     var selectedAudioDevice: AudioDevice? = null
         private set
+
     val availableUniqueAudioDevices: SortedSet<AudioDevice>
+
     val availableAudioDevices: List<AudioDevice>
         get() = this.availableUniqueAudioDevices.toList()
 
     init {
         this.preferredDeviceList = getPreferredDeviceList(preferredDeviceList)
-        this.availableUniqueAudioDevices =
-            ConcurrentSkipListSet(AudioDevicePriorityComparator(this.preferredDeviceList))
+        this.availableUniqueAudioDevices = ConcurrentSkipListSet(AudioDevicePriorityComparator(this.preferredDeviceList))
+
         logger.d(TAG_AUDIO_SWITCH, "AudioSwitch($VERSION)")
         logger.d(TAG_AUDIO_SWITCH, "Preferred device list = ${this.preferredDeviceList.map { it.simpleName }}")
     }
 
-    private fun getPreferredDeviceList(preferredDeviceList: List<Class<out AudioDevice>>):
-            List<Class<out AudioDevice>> {
+    private fun getPreferredDeviceList(preferredDeviceList: List<Class<out AudioDevice>>): List<Class<out AudioDevice>> {
         require(hasNoDuplicates(preferredDeviceList))
 
         return if (preferredDeviceList.isEmpty() || preferredDeviceList == defaultPreferredDeviceList) {
@@ -119,13 +111,13 @@ abstract class AbstractAudioSwitch
      * **Note:** When audio device listening is no longer needed, [AudioSwitch.stop] should be
      * called in order to prevent a memory leak.
      */
-    fun start(listener: AudioDeviceChangeListener) {
-        audioDeviceChangeListener = listener
+    fun start() {
         when (state) {
             STOPPED -> {
                 this.deviceScanner.start(this)
                 state = STARTED
             }
+
             else -> {
                 logger.d(TAG_AUDIO_SWITCH, "Redundant start() invocation while already in the started or activated state")
             }
@@ -143,9 +135,11 @@ abstract class AbstractAudioSwitch
                 deactivate()
                 closeListeners()
             }
+
             STARTED -> {
                 closeListeners()
             }
+
             STOPPED -> {
                 logger.d(TAG_AUDIO_SWITCH, "Redundant stop() invocation while already in the stopped state")
             }
@@ -169,6 +163,7 @@ abstract class AbstractAudioSwitch
                 selectedAudioDevice?.let { this.onActivate(it) }
                 state = ACTIVATED
             }
+
             ACTIVATED -> selectedAudioDevice?.let { this.onActivate(it) }
             STOPPED -> throw IllegalStateException()
         }
@@ -186,6 +181,7 @@ abstract class AbstractAudioSwitch
                 audioDeviceManager.restoreAudioState()
                 state = STARTED
             }
+
             STARTED, STOPPED -> {
             }
         }
@@ -207,7 +203,10 @@ abstract class AbstractAudioSwitch
     protected fun selectAudioDevice(wasListChanged: Boolean, audioDevice: AudioDevice? = this.getBestDevice()) {
         if (selectedAudioDevice == audioDevice) {
             if (wasListChanged) {
-                audioDeviceChangeListener?.invoke(availableUniqueAudioDevices.toList(), selectedAudioDevice)
+                audioChangedFlow.value = audioChangedFlow.value.copy(
+                    audioDevices = availableUniqueAudioDevices.toList(),
+                    selectedAudioDevice = selectedAudioDevice
+                )
             }
             return
         }
@@ -222,7 +221,10 @@ abstract class AbstractAudioSwitch
         }
         // trigger audio device change listener if there has been a change
 
-        audioDeviceChangeListener?.invoke(availableUniqueAudioDevices.toList(), selectedAudioDevice)
+        audioChangedFlow.value = audioChangedFlow.value.copy(
+            audioDevices = availableUniqueAudioDevices.toList(),
+            selectedAudioDevice = selectedAudioDevice
+        )
     }
 
     private fun getBestDevice(): AudioDevice? {
@@ -241,26 +243,9 @@ abstract class AbstractAudioSwitch
 
     private fun closeListeners() {
         this.deviceScanner.stop()
-        audioDeviceChangeListener = null
         state = STOPPED
     }
 
     protected abstract fun onActivate(audioDevice: AudioDevice)
     protected abstract fun onDeactivate()
-
-    companion object {
-        /**
-         * The version of the AudioSwitch library.
-         */
-        const val VERSION = BuildConfig.VERSION_NAME
-
-        internal val defaultPreferredDeviceList by lazy {
-            listOf(
-                BluetoothHeadset::class.java,
-                WiredHeadset::class.java,
-                Earpiece::class.java,
-                Speakerphone::class.java,
-            )
-        }
-    }
 }
