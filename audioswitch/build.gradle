@@ -116,7 +116,7 @@ afterEvaluate {
                 version = audioSwitchVersion
 
                 artifact androidSourcesJar
-                artifact sourcesJar
+//                artifact sourcesJar
             }
         }
     }
