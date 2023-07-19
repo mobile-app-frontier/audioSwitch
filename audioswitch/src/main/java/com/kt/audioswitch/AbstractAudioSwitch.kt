@@ -11,6 +11,7 @@ import com.kt.audioswitch.comparators.AudioDevicePriorityComparator
 import com.kt.audioswitch.scanners.Scanner
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import java.util.*
 import java.util.concurrent.ConcurrentSkipListSet
 
@@ -19,17 +20,10 @@ internal const val TAG_AUDIO_SWITCH = "AudioSwitch"
 abstract class AbstractAudioSwitch
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE) internal constructor(
         context: Context,
-        private val audioChangedFlow: MutableStateFlow<AudioDeviceChange>,
         scanner: Scanner,
         loggingEnabled: Boolean = true,
         internal var logger: Logger = ProductionLogger(loggingEnabled),
         preferredDeviceList: List<Class<out AudioDevice>>,
-        internal val audioDeviceManager: AudioDeviceManager = AudioDeviceManager(
-            context,
-            logger,
-            context.getSystemService(Context.AUDIO_SERVICE) as AudioManager,
-            audioChangedFlow = audioChangedFlow
-        )
 ) : Scanner.Listener {
 
     companion object {
@@ -44,6 +38,15 @@ abstract class AbstractAudioSwitch
             )
         }
     }
+
+    protected var _audioDeviceChangeFlow = MutableStateFlow(AudioDeviceChange())
+
+    internal val audioDeviceManager: AudioDeviceManager = AudioDeviceManager(
+        context,
+        logger,
+        context.getSystemService(Context.AUDIO_SERVICE) as AudioManager,
+        audioChangedFlow = _audioDeviceChangeFlow
+    )
 
     internal var state: State = STOPPED
 
@@ -203,7 +206,7 @@ abstract class AbstractAudioSwitch
     protected fun selectAudioDevice(wasListChanged: Boolean, audioDevice: AudioDevice? = this.getBestDevice()) {
         if (selectedAudioDevice == audioDevice) {
             if (wasListChanged) {
-                audioChangedFlow.value = audioChangedFlow.value.copy(
+                _audioDeviceChangeFlow.value = _audioDeviceChangeFlow.value.copy(
                     audioDevices = availableUniqueAudioDevices.toList(),
                     selectedAudioDevice = selectedAudioDevice
                 )
@@ -221,7 +224,7 @@ abstract class AbstractAudioSwitch
         }
         // trigger audio device change listener if there has been a change
 
-        audioChangedFlow.value = audioChangedFlow.value.copy(
+        _audioDeviceChangeFlow.value = _audioDeviceChangeFlow.value.copy(
             audioDevices = availableUniqueAudioDevices.toList(),
             selectedAudioDevice = selectedAudioDevice
         )

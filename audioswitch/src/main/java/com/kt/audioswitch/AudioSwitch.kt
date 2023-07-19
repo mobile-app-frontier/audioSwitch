@@ -16,6 +16,8 @@ import com.kt.audioswitch.android.ProductionLogger
 import com.kt.audioswitch.scanners.AudioDeviceScanner
 import com.kt.audioswitch.scanners.Scanner
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import java.util.*
 
 private const val TAG = "AudioSwitch"
@@ -26,34 +28,27 @@ class AudioSwitch : AbstractAudioSwitch {
     constructor(
         context: Context,
         loggingEnabled: Boolean = false,
-        audioChangedFlow: MutableStateFlow<AudioDeviceChange>,
         preferredDeviceList: List<Class<out AudioDevice>> = defaultPreferredDeviceList
     ) : this(
-        context, audioChangedFlow, ProductionLogger(loggingEnabled), preferredDeviceList
+        context, ProductionLogger(loggingEnabled), preferredDeviceList
     )
+
+    val audioDeviceChangeFlow: StateFlow<AudioDeviceChange>
+        get() = _audioDeviceChangeFlow.asStateFlow()
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal constructor(
         context: Context,
-        audioChangedFlow: MutableStateFlow<AudioDeviceChange>,
         logger: Logger,
         preferredDeviceList: List<Class<out AudioDevice>>,
         audioManager: AudioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager,
-        audioDeviceManager: AudioDeviceManager = AudioDeviceManager(
-            context = context,
-            logger = logger,
-            audioManager = audioManager,
-            audioChangedFlow = audioChangedFlow
-        ),
         handler: Handler = Handler(Looper.getMainLooper()),
         scanner: Scanner = AudioDeviceScanner(audioManager, handler),
     ) : super(
         context = context,
-        audioChangedFlow = audioChangedFlow,
         scanner = scanner,
         logger = logger,
         preferredDeviceList = preferredDeviceList,
-        audioDeviceManager = audioDeviceManager,
     )
 
     override fun onDeviceDisconnected(audioDevice: AudioDevice) {
