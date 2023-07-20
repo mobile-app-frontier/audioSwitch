@@ -18,12 +18,13 @@ import java.util.concurrent.ConcurrentSkipListSet
 internal const val TAG_AUDIO_SWITCH = "AudioSwitch"
 
 abstract class AbstractAudioSwitch
-    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE) internal constructor(
-        context: Context,
-        scanner: Scanner,
-        loggingEnabled: Boolean = true,
-        internal var logger: Logger = ProductionLogger(loggingEnabled),
-        preferredDeviceList: List<Class<out AudioDevice>>,
+@VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+internal constructor(
+    context: Context,
+    scanner: Scanner,
+    loggingEnabled: Boolean = true,
+    internal var logger: Logger = ProductionLogger(loggingEnabled),
+    preferredDeviceList: List<Class<out AudioDevice>>,
 ) : Scanner.Listener {
 
     companion object {
@@ -69,14 +70,15 @@ abstract class AbstractAudioSwitch
     var selectedAudioDevice: AudioDevice? = null
         private set
 
-    val availableUniqueAudioDevices: SortedSet<AudioDevice>
+    protected val availableUniqueAudioDevices: SortedSet<AudioDevice>
 
-    val availableAudioDevices: List<AudioDevice>
+    protected val availableAudioDevices: List<AudioDevice>
         get() = this.availableUniqueAudioDevices.toList()
 
     init {
         this.preferredDeviceList = getPreferredDeviceList(preferredDeviceList)
-        this.availableUniqueAudioDevices = ConcurrentSkipListSet(AudioDevicePriorityComparator(this.preferredDeviceList))
+        this.availableUniqueAudioDevices =
+            ConcurrentSkipListSet(AudioDevicePriorityComparator(this.preferredDeviceList))
 
         logger.d(TAG_AUDIO_SWITCH, "AudioSwitch($VERSION)")
         logger.d(TAG_AUDIO_SWITCH, "Preferred device list = ${this.preferredDeviceList.map { it.simpleName }}")
@@ -203,7 +205,10 @@ abstract class AbstractAudioSwitch
         this.selectAudioDevice(wasListChanged = false, audioDevice = audioDevice)
     }
 
-    protected fun selectAudioDevice(wasListChanged: Boolean, audioDevice: AudioDevice? = this.getBestDevice()) {
+    protected fun selectAudioDevice(
+        wasListChanged: Boolean,
+        audioDevice: AudioDevice? = this.getBestDevice()
+    ) {
         if (selectedAudioDevice == audioDevice) {
             if (wasListChanged) {
                 _audioDeviceChangeFlow.value = _audioDeviceChangeFlow.value.copy(
