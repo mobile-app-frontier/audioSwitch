@@ -7,7 +7,7 @@ plugins {
 
 def audioSwitchGroupId = 'com.kt'
 def audioSwitchArtifactId = 'audioswitch'
-def audioSwitchVersion = '1.0.0'
+def audioSwitchVersion = '1.0.1'
 
 android {
     compileSdkVersion 33
